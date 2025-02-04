@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { NextAuthProvider } from '@/components/NextAuthProvider'
 import { GradientBackground } from "@/components/ui/gradient-background"
 import { MousePointerBackground } from "@/components/ui/mouse-pointer-background"
+import { MainWrapper } from '@/components/MainWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -83,9 +84,9 @@ export default function RootLayout({
           <NextAuthProvider>
             <div className="min-h-[100dvh] h-full">
               <Navigation />
-              <main className="lg:pl-20 h-full">
+              <MainWrapper>
                 {children}
-              </main>
+              </MainWrapper>
             </div>
           </NextAuthProvider>
         </ThemeProvider>

@@ -7,7 +7,7 @@ export default async function middleware(request: NextRequestWithAuth) {
   const isAuthenticated = !!token
 
   // Lista de rotas protegidas
-  const protectedRoutes = ['/checklist', '/oneweek', '/circles']
+  const protectedRoutes = ['/feed', '/courses', '/blog', '/profile']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -25,8 +25,9 @@ export default async function middleware(request: NextRequestWithAuth) {
 
 export const config = {
   matcher: [
-    '/checklist/:path*',
-    '/oneweek/:path*',
-    '/circles/:path*',
+    '/feed/:path*',
+    '/courses/:path*',
+    '/blog/:path*',
+    '/profile/:path*',
   ]
 } 

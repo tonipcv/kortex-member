@@ -33,14 +33,10 @@ export default function SignIn() {
         setError("Email ou senha inválidos");
       } else {
         router.refresh();
-        router.push("/checklist");
+        router.push("/feed");
         router.refresh();
       }
-    } catch (
-      /* eslint-disable @typescript-eslint/no-unused-vars */
-      _err
-      /* eslint-enable @typescript-eslint/no-unused-vars */
-    ) {
+    } catch (error) {
       setError("Ocorreu um erro ao fazer login");
     } finally {
       setIsLoading(false);
@@ -49,7 +45,7 @@ export default function SignIn() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    signIn("google", { callbackUrl: "/checklist" });
+    signIn("google", { callbackUrl: "/feed" });
   };
 
   return (
