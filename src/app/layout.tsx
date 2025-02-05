@@ -7,12 +7,17 @@ import { NextAuthProvider } from '@/components/NextAuthProvider'
 import { GradientBackground } from "@/components/ui/gradient-background"
 import { MousePointerBackground } from "@/components/ui/mouse-pointer-background"
 import { MainWrapper } from '@/components/MainWrapper'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'KORAX | Transform Your Influence',
-  description: 'Transform your audience into high-value digital assets and recurring revenue streams with our white-label software solutions.',
+  metadataBase: new URL('http://localhost:3000'),
+  title: {
+    default: 'Korax',
+    template: '%s | Korax'
+  },
+  description: 'Korax platform',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -89,6 +94,7 @@ export default function RootLayout({
               </MainWrapper>
             </div>
           </NextAuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

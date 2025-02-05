@@ -2,7 +2,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, UserCircleIcon, NewspaperIcon, RssIcon } from 'lucide-react';
+import { LayoutDashboard, CreditCard, LineChart } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from 'react';
@@ -53,22 +53,22 @@ export default function Navigation() {
       title: "Principal",
       items: [
         {
-          href: '/courses',
-          label: 'Cursos',
-          icon: BookOpen,
-          description: 'Explore nossos cursos'
+          href: '/dashboard',
+          label: 'Dashboard',
+          icon: LayoutDashboard,
+          description: 'Overview'
         },
         {
-          href: '/blog',
-          label: 'Blog',
-          icon: NewspaperIcon,
-          description: 'Artigos e novidades'
+          href: '/payments',
+          label: 'Payments',
+          icon: CreditCard,
+          description: 'Manage payments'
         },
         {
-          href: '/feed',
-          label: 'Feed',
-          icon: RssIcon,
-          description: 'Compartilhe experiências'
+          href: '/analytics',
+          label: 'Analytics',
+          icon: LineChart,
+          description: 'Marketing insights'
         }
       ]
     }
@@ -99,7 +99,7 @@ export default function Navigation() {
           </AvatarFallback>
         </Avatar>
       ) : (
-        <UserCircleIcon className="h-4 w-4 text-white" />
+        <LayoutDashboard className="h-4 w-4 text-white" />
       )}
     </div>
   );
@@ -109,7 +109,7 @@ export default function Navigation() {
       {/* Desktop Navigation */}
       <div className="fixed top-0 left-0 bottom-0 hidden lg:flex flex-col w-20 border-r border-white/10 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-background/10">
         <div className="p-6 border-b border-white/10">
-          <Link href="/feed" className="flex items-center justify-center">
+          <Link href="/dashboard" className="flex items-center justify-center">
             <span className="text-sm font-normal text-white tracking-wide">KORAX</span>
           </Link>
         </div>
@@ -138,7 +138,7 @@ export default function Navigation() {
         {/* Mobile Header */}
         <div className="fixed top-0 left-0 right-0 h-[4.5rem] border-b border-white/10 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-background/10 z-40">
           <div className="py-4 px-4 flex justify-between items-center">
-            <Link href="/feed" className="flex items-center">
+            <Link href="/dashboard" className="flex items-center">
               <span className="text-sm font-normal text-white tracking-wide">KORAX</span>
             </Link>
             <Link href="/profile">
@@ -151,7 +151,7 @@ export default function Navigation() {
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <UserCircleIcon className="h-4 w-4 text-white" />
+                  <LayoutDashboard className="h-4 w-4 text-white" />
                 )}
               </div>
             </Link>

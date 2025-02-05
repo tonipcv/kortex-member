@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Account {
@@ -13,14 +14,15 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -34,9 +36,9 @@ model Session {
 }
 
 model User {
-  id                     String    @id @default(cuid())
+  id                     String          @id @default(cuid())
   name                   String?
-  email                  String?   @unique
+  email                  String?         @unique
   emailVerified          DateTime?
   image                  String?
   password               String?
@@ -50,6 +52,9 @@ model User {
   blogPosts             BlogPost[]
   profile               UserProfile?
   posts                 Post[]
+  userLinks             UserLink[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }
 
 model VerificationToken {
@@ -60,74 +65,73 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model UserProfile {
+  id        String   @id @default(cuid())
+  bio       String?
+  fullName  String?
+  avatarUrl String?
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Course {
   id          String   @id @default(cuid())
   title       String
   description String?
-  imageUrl    String?
-  price       Float
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model BlogPost {
-  id          String   @id @default(cuid())
-  title       String
-  content     String   @db.Text
-  slug        String   @unique
-  imageUrl    String?
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model UserProfile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  fullName        String
-  nickname        String?
-  documentId      String?   // Documento de identificação
-  birthDate       DateTime?
-  phone           String?
-  country         String?
-  instagram       String?
-  youtube         String?
-  
-  // Novos campos
-  avatarUrl       String?   // Imagem de perfil
-  coverUrl        String?   // Imagem de capa
-  bio             String?   @db.Text  // Sobre mim
-  
-  // Endereço
-  postalCode      String?   // CEP
-  address         String?   // Endereço
-  addressNumber   String?   // Número
-  complement      String?   // Complemento
-  state           String?   // Estado
-  city            String?   // Cidade
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  content     String    @db.Text
-  images      String[]  // URLs das imagens
-  likes       Int       @default(0)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  published Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-  @@index([userId])
+model UserLink {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  whatsapp  String
+  linkId    String
+  link      Link     @relation(fields: [linkId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Link {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  leads     Lead[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -48,23 +48,32 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const updatedProfile = await prisma.userProfile.upsert({
-      where: {
-        userId: user.id
-      },
-      create: {
-        userId: user.id,
+    // Se já existe um perfil, atualize-o
+    if (user.profile) {
+      const updatedProfile = await prisma.userProfile.update({
+        where: { userId: user.id },
+        data: {
+          fullName: data.fullName || user.name || '',
+          avatarUrl: data.avatarUrl,
+        },
+      })
+      return NextResponse.json(updatedProfile)
+    }
+
+    // Se não existe um perfil, crie um novo
+    const newProfile = await prisma.userProfile.create({
+      data: {
         fullName: data.fullName || user.name || '',
         avatarUrl: data.avatarUrl,
-        // outros campos do perfil...
-      },
-      update: {
-        avatarUrl: data.avatarUrl,
-        // outros campos do perfil...
+        user: {
+          connect: {
+            id: user.id
+          }
+        }
       }
     })
 
-    return NextResponse.json(updatedProfile)
+    return NextResponse.json(newProfile)
   } catch (error) {
     console.error('Error updating profile:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
