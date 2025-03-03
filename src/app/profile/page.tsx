@@ -1,359 +1,199 @@
 'use client';
 
-import { useSession, signOut } from "next-auth/react";
+import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImageUpload } from "@/components/ui/image-upload";
-import Image from "next/image";
-import { CameraIcon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { User, Mail, Image as ImageIcon, LogOut } from "lucide-react";
+import { PageWrapper } from "@/components/PageWrapper";
+import Navigation from "@/components/Navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+}
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: session?.user?.name || '',
-    email: session?.user?.email || '',
-    fullName: '',
-    nickname: '',
-    documentId: '',
-    birthDate: '',
-    phone: '',
-    country: '',
-    instagram: '',
-    youtube: '',
-    bio: '',
-    avatarUrl: '',
-    coverUrl: '',
-    postalCode: '',
-    address: '',
-    addressNumber: '',
-    complement: '',
-    state: '',
-    city: '',
+  const router = useRouter();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push('/auth/signin');
+    },
   });
 
-  // Carregar dados do perfil
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    image: ''
+  });
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (session?.user?.email) {
-        try {
-          const response = await fetch(`/api/profile?email=${session.user.email}`);
-          const data = await response.json();
-          if (data) {
-            setProfile(prev => ({
-              ...prev,
-              ...data
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching profile:', error);
-        }
-      }
-    };
+    if (status === 'authenticated') {
+      fetchProfile();
+    }
+  }, [status]);
 
-    fetchProfile();
-  }, [session?.user?.email]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setProfile(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleSave = async () => {
+  const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profile),
-      });
-
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/profile');
+      
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        throw new Error('Erro ao buscar perfil');
       }
 
-      const updatedProfile = await response.json();
-      setProfile(prev => ({
-        ...prev,
-        ...updatedProfile
-      }));
-      setIsEditing(false);
+      const data = await response.json();
+      setProfile(data);
+      setFormData({
+        name: data.name || '',
+        image: data.image || ''
+      });
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('Error fetching profile:', error);
+      setError('Erro ao carregar perfil');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar perfil');
+      }
+
+      await fetchProfile();
+      alert('Perfil atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erro ao atualizar perfil');
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageWrapper>
+        <Navigation />
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-gray-900">Carregando...</div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
   return (
-    <div className="container max-w-4xl mx-auto p-4 pt-20 lg:pt-10">
-      <Card className="bg-background/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle>Perfil</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="personal">Informações Pessoais</TabsTrigger>
-              <TabsTrigger value="social">Redes Sociais</TabsTrigger>
-              <TabsTrigger value="address">Endereço</TabsTrigger>
-            </TabsList>
+    <PageWrapper>
+      <Navigation />
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-medium text-gray-900">Perfil</h2>
+        </div>
 
-            <TabsContent value="personal" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="max-w-2xl mx-auto">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-medium text-gray-900">
+                Informações Pessoais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center mb-8">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={profile?.image || ''} alt={profile?.name || 'Avatar'} />
+                  <AvatarFallback className="bg-gray-100 text-gray-600 text-xl">
+                    {profile?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-white/70">Nome Completo</label>
-                  <Input
-                    name="fullName"
-                    value={profile.fullName}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-          <div className="space-y-2">
-                  <label className="text-sm text-white/70">Apelido</label>
-              <Input
-                    name="nickname"
-                    value={profile.nickname}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                className="bg-white/5"
-              />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-white/70">Email</label>
-                  <Input
-                    value={profile.email}
-                    disabled
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Documento</label>
-                  <Input
-                    name="documentId"
-                    value={profile.documentId}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Data de Nascimento</label>
-                  <Input
-                    type="date"
-                    name="birthDate"
-                    value={profile.birthDate}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Telefone</label>
-                  <Input
-                    name="phone"
-                    value={profile.phone}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">País</label>
-                  <Input
-                    name="country"
-                    value={profile.country}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="col-span-full space-y-2">
-                  <label className="text-sm text-white/70">Sobre Mim</label>
-                  <Textarea
-                    name="bio"
-                    value={profile.bio}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5 min-h-[100px]"
-                  />
-                </div>
-
-                <div className="col-span-full flex flex-col items-center gap-4 mb-6">
-                  <div className="space-y-2 text-center">
-                    <label className="text-sm text-white/70">Foto de Perfil</label>
-                    <ImageUpload
-                      value={profile.avatarUrl}
-                      onChange={(value) => setProfile(prev => ({ ...prev, avatarUrl: value }))}
-                      disabled={!isEditing}
-                      className="mx-auto"
+                  <Label htmlFor="name" className="text-gray-700">
+                    Nome
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="pl-10 bg-white border-gray-200"
+                      placeholder="Seu nome completo"
                     />
                   </div>
-                  <div className="space-y-2 text-center">
-                    <label className="text-sm text-white/70">Imagem de Capa</label>
-                    <div className="relative w-full h-[100px] rounded-lg overflow-hidden">
-                      {profile.coverUrl ? (
-                        <Image
-                          src={profile.coverUrl}
-                          alt="Cover"
-                          fill
-                          style={{ objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                          <CameraIcon className="h-6 w-6 text-white/70" />
-                        </div>
-                      )}
-                      {isEditing && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <ImageUpload
-                            value={profile.coverUrl}
-                            onChange={(value) => setProfile(prev => ({ ...prev, coverUrl: value }))}
-                            disabled={!isEditing}
-                          />
-                        </div>
-                      )}
-                    </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      value={profile?.email || ''}
+                      disabled
+                      className="pl-10 bg-gray-50 border-gray-200 text-gray-500"
+                    />
                   </div>
                 </div>
-              </div>
-            </TabsContent>
 
-            <TabsContent value="social" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-white/70">Instagram</label>
-                  <Input
-                    name="instagram"
-                    value={profile.instagram}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
+                  <Label htmlFor="image" className="text-gray-700">
+                    URL da Imagem
+                  </Label>
+                  <div className="relative">
+                    <ImageIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="image"
+                      value={formData.image}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      className="pl-10 bg-white border-gray-200"
+                      placeholder="URL da sua foto de perfil"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">YouTube</label>
-                  <Input
-                    name="youtube"
-                    value={profile.youtube}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
+                <div className="pt-6 space-y-4">
+                  <Button 
+                    type="submit"
+                    className="w-full bg-gray-900 text-white hover:bg-gray-800"
+                  >
+                    Salvar Alterações
+                  </Button>
+
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 space-x-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sair da Conta</span>
+                  </Button>
                 </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="address" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">CEP</label>
-                  <Input
-                    name="postalCode"
-                    value={profile.postalCode}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Endereço</label>
-                  <Input
-                    name="address"
-                    value={profile.address}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Número</label>
-                  <Input
-                    name="addressNumber"
-                    value={profile.addressNumber}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Complemento</label>
-                  <Input
-                    name="complement"
-                    value={profile.complement}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Estado</label>
-                  <Input
-                    name="state"
-                    value={profile.state}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-          </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-white/70">Cidade</label>
-                  <Input
-                    name="city"
-                    value={profile.city}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="bg-white/5"
-                  />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="pt-4 space-y-4">
-            {isEditing ? (
-              <div className="flex gap-2">
-                <Button onClick={handleSave}>Salvar</Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            ) : (
-              <Button onClick={() => setIsEditing(true)}>Editar Perfil</Button>
-            )}
-
-            <Button 
-              variant="ghost" 
-              className="w-full text-white/70 hover:text-white"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            >
-              <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </PageWrapper>
   );
 } 

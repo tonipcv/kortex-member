@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Account {
@@ -14,12 +13,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -36,102 +35,161 @@ model Session {
 }
 
 model User {
-  id                     String          @id @default(cuid())
-  name                   String?
-  email                  String?         @unique
-  emailVerified          DateTime?
-  image                  String?
-  password               String?
-  resetToken             String?
-  resetTokenExpiry       DateTime?
-  verificationCode       String?
-  verificationCodeExpiry DateTime?
-  accounts               Account[]
-  sessions              Session[]
-  courses               Course[]
-  blogPosts             BlogPost[]
-  profile               UserProfile?
-  posts                 Post[]
-  userLinks             UserLink[]
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+
+  accounts     Account[]
+  sessions     Session[]
+  bankAccounts BankAccount[]
+  creditCards  CreditCard[]
+  investments  Investment[]
+  incomes      Income[]
+  expenses     Expense[]
+  reports      Report[]
+  dividends    Dividend[]
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model UserProfile {
+model BankAccount {
   id        String   @id @default(cuid())
-  bio       String?
-  fullName  String?
-  avatarUrl String?
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  bank      String
+  currency  String   @default("BRL")
+  country   String   @default("BR")
+  balance   Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bankTransactions BankTransaction[]
+
+  @@map("bank_accounts")
 }
 
-model Course {
+model BankTransaction {
+  id            String      @id @default(cuid())
+  type          String      // 'income' ou 'expense'
+  description   String
+  amount        Float
+  date          DateTime
+  category      String
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  bankAccountId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("bank_transactions")
+}
+
+model CreditCard {
   id          String   @id @default(cuid())
-  title       String
-  description String?
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id])
+  userId      String
+  name        String
+  lastDigits  String
+  currentBill Float    @default(0)
+  nextBill    Float    @default(0)
+  dueDate     DateTime
+  limit       Float
+  color       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions CreditCardTransaction[]
+  bills        CreditCardBill[]
+
+  @@index([userId])
 }
 
-model BlogPost {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model CreditCardTransaction {
+  id            String      @id @default(cuid())
+  description   String
+  amount        Float
+  date          DateTime
+  installments  Int         @default(1)
+  category      String
+  creditCard    CreditCard  @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  creditCardId  String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("credit_card_transactions")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  published Boolean  @default(false)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model CreditCardBill {
+  id        String    @id @default(cuid())
+  cardId    String
+  dueDate   DateTime
+  amount    Float
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  card CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
 }
 
-model UserLink {
+model Dividend {
   id        String   @id @default(cuid())
-  title     String
-  url       String
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  recipient String
+  company   String?
+  amount    Float
+  date      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Lead {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  whatsapp  String
-  linkId    String
-  link      Link     @relation(fields: [linkId], references: [id])
-  createdAt DateTime @default(now())
+model Income {
+  id          String   @id @default(cuid())
+  userId      String
+  source      String
+  amount      Float
+  date        DateTime
+  description String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Link {
-  id        String   @id @default(cuid())
-  title     String
-  url       String
-  leads     Lead[]
+model Expense {
+  id          String   @id @default(cuid())
+  userId      String
+  category    String
+  amount      Float
+  date        DateTime
+  description String?
+  company     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id            String @id @default(cuid())
+  userId        String
+  period        String
+  totalIncome   Float
+  totalExpenses Float
+  netProfit     Float
+  byCategory    String // Changed from Json to String for SQLite compatibility
+
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Investment {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  amount      Float
+  date        DateTime
+  description String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

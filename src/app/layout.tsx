@@ -5,7 +5,6 @@ import Navigation from '@/components/Navigation'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NextAuthProvider } from '@/components/NextAuthProvider'
 import { GradientBackground } from "@/components/ui/gradient-background"
-import { MousePointerBackground } from "@/components/ui/mouse-pointer-background"
 import { MainWrapper } from '@/components/MainWrapper'
 import { Toaster } from 'sonner'
 
@@ -13,19 +12,15 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3000'),
-  title: {
-    default: 'Korax',
-    template: '%s | Korax'
-  },
-  description: 'Korax platform',
+  title: 'Financy AI',
+  description: 'Gestão financeira inteligente para suas finanças pessoais',
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' },
     ],
   },
   appleWebApp: {
@@ -75,9 +70,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="text-size-adjust" content="none" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
       </head>
-      <body suppressHydrationWarning className={`${inter.className} antialiased h-full bg-black`}>
+      <body suppressHydrationWarning className={`${inter.className} antialiased h-full bg-blue-950`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -85,7 +81,12 @@ export default function RootLayout({
           disableTransitionOnChange
           forcedTheme="dark"
         >
-          <MousePointerBackground />
+          {/* Simplified Blue Background */}
+          <div className="fixed inset-0 -z-10">
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-950 via-blue-900 to-black" />
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-soft-light" />
+          </div>
+
           <NextAuthProvider>
             <div className="min-h-[100dvh] h-full">
               <Navigation />

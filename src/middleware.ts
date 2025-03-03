@@ -1,32 +1,22 @@
-import { NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
-import { NextRequestWithAuth } from 'next-auth/middleware'
+import { withAuth } from "next-auth/middleware";
 
-export default async function middleware(request: NextRequestWithAuth) {
-  const token = await getToken({ req: request })
-  const isAuthenticated = !!token
-
-  // Lista de rotas protegidas
-  const protectedRoutes = ['/dashboard', '/profile']
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  if (isProtectedRoute) {
-    if (!isAuthenticated) {
-      const redirectUrl = new URL('/auth/signin', request.url)
-      redirectUrl.searchParams.set('callbackUrl', request.url)
-      return NextResponse.redirect(redirectUrl)
-    }
-  }
-
-  return NextResponse.next()
-}
+export default withAuth({
+  callbacks: {
+    authorized({ req, token }) {
+      return !!token;
+    },
+  },
+});
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/payments/:path*',
-  ]
-} 
+    "/dashboard/:path*",
+    "/cards/:path*",
+    "/accounts/:path*",
+    "/transactions/:path*",
+    "/reports/:path*",
+    "/api/cards/:path*",
+    "/api/accounts/:path*",
+    "/api/transactions/:path*",
+  ],
+}; 
